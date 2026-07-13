@@ -1401,9 +1401,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const btn = document.getElementById('themeToggleBtn');
   if (btn) {
     if (savedTheme === 'dark') {
-      btn.innerHTML = '<i class="fas fa-sun"></i> Theme';
+      btn.innerHTML = '<i class="fas fa-sun"></i>';
     } else {
-      btn.innerHTML = '<i class="fas fa-moon"></i> Theme';
+      btn.innerHTML = '<i class="fas fa-moon"></i>';
     }
   }
 
@@ -1417,12 +1417,12 @@ window.toggleExplorerTheme = function() {
     document.documentElement.classList.remove('dark-theme');
     localStorage.setItem('theme', 'light');
     const btn = document.getElementById('themeToggleBtn');
-    if (btn) btn.innerHTML = '<i class="fas fa-moon"></i> Theme';
+    if (btn) btn.innerHTML = '<i class="fas fa-moon"></i>';
   } else {
     document.documentElement.classList.add('dark-theme');
     localStorage.setItem('theme', 'dark');
     const btn = document.getElementById('themeToggleBtn');
-    if (btn) btn.innerHTML = '<i class="fas fa-sun"></i> Theme';
+    if (btn) btn.innerHTML = '<i class="fas fa-sun"></i>';
   }
 };
 
@@ -1442,11 +1442,92 @@ async function updateHeaderInfo() {
     const d = await apiFetch('/network/stats');
     setEl('header-network', d.network  || '—');
     setEl('header-chain',   d.chainId  || '—');
-    setEl('header-node',    (d.nodeId  || '').slice(0, 16) + '…');
-    setEl('header-mode',    (d.mode    || '—').toUpperCase());
-  } catch {
-    setEl('header-network', 'Connection error');
+    const dot = document.querySelector('.status-dot');
+    if (dot) {
+      dot.style.background = '#10b981';
+      dot.style.boxShadow = '0 0 8px #10b981';
+    }
+  } catch (err) {
+    setEl('header-network', 'Disconnected');
+    setEl('header-chain', '—');
+    const dot = document.querySelector('.status-dot');
+    if (dot) {
+      dot.style.background = '#ef4444';
+      dot.style.boxShadow = '0 0 8px #ef4444';
+    }
   }
+}
+
+// ── Copy Code Utility ───────────────────────────────────────────────────────
+function addCopyButtons() {
+  const codeBlocks = document.querySelectorAll('.section-content pre');
+  codeBlocks.forEach(block => {
+    if (block.querySelector('.copy-btn')) return;
+
+    block.style.position = 'relative';
+
+    const button = document.createElement('button');
+    button.className = 'copy-btn';
+    button.innerHTML = '<i class="far fa-copy"></i>';
+    button.title = 'Copy code';
+    
+    button.addEventListener('click', async () => {
+      const code = block.querySelector('code')?.innerText || '';
+      try {
+        await navigator.clipboard.writeText(code);
+        button.innerHTML = '<i class="fas fa-check"></i>';
+        button.classList.add('copied');
+        setTimeout(() => {
+          button.innerHTML = '<i class="far fa-copy"></i>';
+          button.classList.remove('copied');
+        }, 2000);
+      } catch (err) {
+        console.error('Failed to copy text: ', err);
+      }
+    });
+
+    block.appendChild(button);
+  });
+}
+
+// ── TOC Scroll Tracking ─────────────────────────────────────────────────────
+function setupTOCScrollTracking() {
+  const mainContent = document.querySelector('.section-content');
+  if (!mainContent) return;
+  
+  const headings = Array.from(mainContent.querySelectorAll('h2, h3'));
+  const tocLinks = document.querySelectorAll('.toc-link');
+  
+  if (headings.length === 0 || tocLinks.length === 0) return;
+  
+  function highlightTOC() {
+    const scrollPos = window.scrollY + 120;
+    
+    let activeHeading = null;
+    for (let i = 0; i < headings.length; i++) {
+      if (headings[i].offsetTop <= scrollPos) {
+        activeHeading = headings[i];
+      } else {
+        break;
+      }
+    }
+    
+    if (!activeHeading && headings.length > 0) {
+      activeHeading = headings[0];
+    }
+    
+    if (activeHeading) {
+      const activeId = activeHeading.id;
+      tocLinks.forEach(link => {
+        const linkId = link.getAttribute('data-target');
+        link.classList.toggle('active', linkId === activeId);
+      });
+    }
+  }
+  
+  window.removeEventListener('scroll', highlightTOC);
+  window.addEventListener('scroll', highlightTOC);
+  highlightTOC();
 }
 
 // ── Render Sidebar ────────────────────────────────────────────────────────
@@ -1485,14 +1566,28 @@ function renderContent(sectionId) {
 
   currentSection = sectionId;
   const container = document.getElementById('docsContent');
+  
+  let contentHtml = data.content;
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = contentHtml;
+  
+  const headings = tempDiv.querySelectorAll('h2, h3');
+  headings.forEach(heading => {
+    const text = heading.textContent;
+    const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    heading.id = id;
+  });
+  
   container.innerHTML = `
     <div class="section-content" id="section-${sectionId}">
-      ${data.content}
+      ${tempDiv.innerHTML}
     </div>
   `;
 
   updateActiveNav(sectionId);
   updateTOC(sectionId);
+  addCopyButtons();
+  setupTOCScrollTracking();
   document.title = `${data.title} · SAYMAN Documentation`;
 }
 
@@ -1528,12 +1623,12 @@ function updateTOC(sectionId) {
   let html = '';
   headings.forEach(heading => {
     const text = heading.replace(/<[^>]*>/g, '');
-    const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const level = heading.match(/<h([2-3])/)[1];
     const style = level === '3' ? 'padding-left: 1.5rem;' : '';
 
     html += `
-      <a href="#${id}" class="toc-link" style="${style}" onclick="event.preventDefault();document.getElementById('${id}')?.scrollIntoView({behavior:'smooth'})">
+      <a href="#${id}" class="toc-link" data-target="${id}" style="${style}" onclick="event.preventDefault();document.getElementById('${id}')?.scrollIntoView({behavior:'smooth'})">
         ${text}
       </a>
     `;
