@@ -1,8 +1,8 @@
 // ── Config ───────────────────────────────────────────────────────────────
-const ANDROID_APK_URL = 'https://raw.githubusercontent.com/saymanlal/sayman-wallet-manager/main/apk/puky.apk';
+const ANDROID_APK_URL = 'https://raw.githubusercontent.com/saymanlal/puky/main/apk/puky.apk';
 const FAUCET_SITE_URL = 'https://sayman-faucet-site.vercel.app/';
 const FAUCET_API_URL = 'https://sayman-faucet.onrender.com';
-const WALLET_WEB_URL = 'https://sayman-wallet-manager.vercel.app/';
+const WALLET_WEB_URL = 'https://puky.vercel.app/';
 const CHAIN_RPC_URL = 'https://sayman.onrender.com';
 
 // ── Navigation Data ──────────────────────────────────────────────────────
@@ -1367,9 +1367,34 @@ let currentSection = 'overview';
 // ── Initialize ─────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   renderSidebar();
-  renderContent('overview');
-  updateActiveNav('overview');
-  updateTOC('overview');
+
+  // Support deep-linking via hash on initial load
+  const hash = window.location.hash.slice(1);
+  let initialSection = 'overview';
+
+  // Check if hash matches any valid section ID
+  const allSectionIds = [];
+  NAV_SECTIONS.forEach(section => {
+    section.links.forEach(link => {
+      allSectionIds.push(link.id);
+    });
+  });
+
+  if (hash && allSectionIds.includes(hash)) {
+    initialSection = hash;
+  }
+
+  renderContent(initialSection);
+  updateActiveNav(initialSection);
+  updateTOC(initialSection);
+
+  // Handle back/forward navigation (hashchange)
+  window.addEventListener('hashchange', () => {
+    const newHash = window.location.hash.slice(1);
+    if (newHash && allSectionIds.includes(newHash) && newHash !== currentSection) {
+      navigateTo(newHash);
+    }
+  });
 
   // Sync theme toggle button
   const savedTheme = localStorage.getItem('theme') || 'light';
