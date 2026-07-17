@@ -142,7 +142,7 @@ const DOCS_DATA = {
       <p>SAYMAN is a Proof-of-Stake Layer 1 blockchain with a built-in JavaScript smart contract engine, multi-layer chain support (L1/L2/Sidechain), EVM-like token and NFT factories, a DEX, staking pools, a peer reputation system, a REST API, a CLI wallet, a browser-based JS SDK, an Android wallet, and a testnet faucet.</p>
 
       <div class="note">
-        <strong>Phase 20 — now live:</strong> Robust archive recovery, exponential backoff back-up system, pipelined sync blocks check, merge-verification cache safety fixes, dedicated transactions explorer with rewards toggling, and clean client/faucet/sdk separations.
+        <strong>Phase 22 — now live:</strong> MetaMask / EVM wallet full compatibility (eth_sendRawTransaction, eth_getLogs, eth_newBlockFilter, wallet_addEthereumChain, 0x address support), tSAYN testnet symbol, accurate gas fee display, atomic nonce management, new explorer pages (Tokens · NFTs · Memecoins · unified Address), unified search, live L2 layer status, contract state & ABI fixes, and SAYMAN logo asset served at <code>/assets/logo-512.png</code>.
       </div>
 
       <h3>What works today</h3>
@@ -251,13 +251,15 @@ const DOCS_DATA = {
     content: `
       <h2>Roadmap</h2>
       <div class="note">
-        <strong>Phase 20 — complete:</strong> Robust archive recovery, concurrency-safe client locking, exponential backoff, synced block check guards, and a dedicated transactions explorer with filter options.
+        <strong>Phase 22 — complete:</strong> Full MetaMask &amp; EVM wallet compatibility, tSAYN testnet symbol, gas fee accuracy, nonce race-condition fix, new explorer pages, unified search, live L2 layer status, contract state &amp; ABI fixes.
       </div>
       <ul>
         <li><strong>Phase 1–13 (done):</strong> Core PoS chain, JS contract engine, REST API, CLI, SDK, Android wallet, faucet, Merkle proofs, gas metering, public testnet.</li>
-        <li><strong>Phase 14-19 (done):</strong> L2 rollups, sidechains, factories, DEX, L1↔L2 bridge, peer reputation, pipelined parallel transaction execution.</li>
-        <li><strong>Phase 20 (done):</strong> Robust archive recovery, concurrency-safe writer lock, exponential retry backoff, syncing block checks, cache safety fixes, complete transactions explorer, and repo separations.</li>
-        <li><strong>Later:</strong> Mainnet launch — 100,000,000 SAYN hard cap, Bitcoin-style halving block rewards. Exact date TBD.</li>
+        <li><strong>Phase 14–19 (done):</strong> L2 rollups, sidechains, factories, DEX, L1↔L2 bridge, peer reputation, pipelined parallel transaction execution.</li>
+        <li><strong>Phase 20–21 (done):</strong> Robust archive recovery, concurrency-safe writer lock, exponential retry backoff, syncing block checks, cache safety fixes, complete transactions explorer, repo separations.</li>
+        <li><strong>Phase 22 (done):</strong> MetaMask/EVM compat, tSAYN symbol, accurate fee display, atomic NonceManager, Tokens/NFTs/Memecoins explorer pages, unified search, live L2 status, contract ABI fix, SAYMAN logo asset.</li>
+        <li><strong>Next — Phase 23:</strong> Mainnet genesis prep, Chainlist submission (chainId 82922), governance contract, cross-chain SAYN bridge.</li>
+        <li><strong>Later — Mainnet:</strong> 100,000,000 SAYN hard cap, Bitcoin-style halving block rewards. Date TBD.</li>
       </ul>
     `
   },
@@ -274,7 +276,13 @@ const DOCS_DATA = {
       <p>JavaScript, using only the globals listed on the Contract Engine page. Anything outside that list is undefined inside the sandbox.</p>
 
       <h3>How do I get test tokens?</h3>
-      <p>Use the faucet UI at <a href="${FAUCET_SITE_URL}" target="_blank">${FAUCET_SITE_URL}</a>, or call <code>POST /api/faucet</code> directly.</p>
+      <p>Use the faucet UI at <a href="${FAUCET_SITE_URL}" target="_blank">${FAUCET_SITE_URL}</a>, or call <code>POST /api/faucet</code> directly. Need bulk tokens for building? Message <a href="https://t.me/SaymanLal" target="_blank">@SaymanLal on Telegram</a> — up to 10M tSAYN for verified builders.</p>
+
+      <h3>Can I use MetaMask with SAYMAN?</h3>
+      <p>Yes! Add the network manually: RPC URL <code>https://sayman.onrender.com</code>, Chain ID <code>82922</code>, symbol <code>tSAYN</code> (testnet) or <code>SAYN</code> (mainnet), or use the "Add to MetaMask" button in the Explorer → Network page. Transactions, balance queries, and raw transaction broadcasting all work with any EVM-compatible wallet.</p>
+
+      <h3>Why does testnet show tSAYN and mainnet show SAYN?</h3>
+      <p>Following Ethereum convention (SepoliaETH, Mumbai MATIC), testnet tokens are prefixed with <code>t</code> to distinguish them from mainnet SAYN. Never use testnet tSAYN for real value.</p>
 
       <h3>What is 1 SAYN in base units?</h3>
       <p>1 SAYN = <strong>100,000,000 base units</strong> (8 decimal places). All on-chain amounts are integers. Divide by 100,000,000 to get SAYN. Call <code>GET /api/denomination</code> for a complete conversion table.</p>
@@ -328,49 +336,74 @@ sayman wallet create</code></pre>
     content: `
       <h2>Create a Wallet</h2>
 
-      <h3>Using the JavaScript SDK</h3>
-      <pre><code>import { SaymanWalletCLI } from '@sayman/sdk/wallet'; // or reuse cli/wallet-cli.js directly
+      <h3>Option 1: MetaMask (easiest for EVM users)</h3>
+      <p>Any EVM-compatible wallet (MetaMask, Trust Wallet, Rainbow, Coinbase Wallet, etc.) works with SAYMAN via the standard EVM JSON-RPC endpoint.</p>
+      <div class="note">
+        <strong>Add SAYMAN to MetaMask manually:</strong>
+        <ol style="margin-top:8px;padding-left:20px;">
+          <li>Open MetaMask → Settings → Networks → Add Network</li>
+          <li>Network Name: <code>Sayman Public Testnet</code></li>
+          <li>RPC URL: <code>https://sayman.onrender.com</code></li>
+          <li>Chain ID: <code>82922</code></li>
+          <li>Currency Symbol: <code>tSAYN</code></li>
+          <li>Block Explorer: <code>https://sayman.up.railway.app</code></li>
+        </ol>
+        <br>Or visit the <a href="https://sayman.up.railway.app" target="_blank">Explorer → Network page</a> and click the <strong>"Add to MetaMask"</strong> button for one-click setup.
+      </div>
+      <p>Once added, MetaMask addresses work everywhere: faucet, explorer, PUKY wallet transfers, and smart contract calls. Your 0x-prefixed MetaMask address is fully compatible — the chain handles 0x prefix stripping automatically.</p>
+
+      <h3>Option 2: PUKY Wallet (native SAYMAN wallet)</h3>
+      <p>Install the <a href="#android-apk" onclick="navigateTo('android-apk')">Android APK</a> or open <a href="${WALLET_WEB_URL}" target="_blank">${WALLET_WEB_URL}</a> and tap "Create Wallet" on first launch — secp256k1 keypair generation, balance display in tSAYN, and native staking support.</p>
+
+      <h3>Option 3: JavaScript SDK</h3>
+      <pre><code>import { SaymanWalletCLI } from '@sayman/sdk/wallet';
 
 const wallet = new SaymanWalletCLI();
 await wallet.initialize();
 console.log(wallet.address, wallet.privateKey);</code></pre>
 
-      <h3>Using the CLI</h3>
+      <h3>Option 4: CLI</h3>
       <pre><code>sayman wallet create</code></pre>
 
-      <h3>Using the Android app or web wallet</h3>
-      <p>Install the <a href="#android-apk" onclick="navigateTo('android-apk')">Android APK</a> or open <a href="${WALLET_WEB_URL}" target="_blank">${WALLET_WEB_URL}</a> and tap "Create Wallet" on first launch — same secp256k1 keypair generation under the hood as the CLI/SDK.</p>
-
       <div class="warning">
-        <strong>Important:</strong> back up your private key. There is no recovery mechanism — <code>deriveAddress()</code> is a one-way SHA-256 hash of the public key.
+        <strong>Important:</strong> back up your private key / seed phrase. There is no recovery mechanism — <code>deriveAddress()</code> is a one-way SHA-256 hash of the public key.
       </div>
     `
   },
 
+
   'get-test-tokens': {
     title: 'Get Test Tokens',
     content: `
-      <h2>Get Test Tokens (SAYN)</h2>
-      <p>The faucet is enabled on testnet configs (<code>faucetEnabled: true</code>) and disabled on mainnet.</p>
+      <h2>Get Test Tokens (tSAYN)</h2>
+      <p>The faucet is enabled on testnet configs (<code>faucetEnabled: true</code>) and disabled on mainnet. Testnet tokens are displayed as <strong>tSAYN</strong> to distinguish them from mainnet SAYN.</p>
 
       <h3>Easiest: use the faucet website</h3>
-      <p>Go to <a href="${FAUCET_SITE_URL}" target="_blank">${FAUCET_SITE_URL}</a>, paste your address, and submit. This talks to the standalone faucet service at <a href="${FAUCET_API_URL}" target="_blank">${FAUCET_API_URL}</a>.</p>
+      <p>Go to <a href="${FAUCET_SITE_URL}" target="_blank">${FAUCET_SITE_URL}</a>, paste your address (supports both 0x-prefixed MetaMask addresses and bare 40-char hex PUKY/SAYMAN addresses), and submit. This talks to the standalone faucet service at <a href="${FAUCET_API_URL}" target="_blank">${FAUCET_API_URL}</a>.</p>
+
+      <div class="note">
+        <strong>MetaMask users:</strong> Copy your address directly from MetaMask (0x format works — the faucet strips the 0x prefix automatically). You get 1000 tSAYN per claim, one per 10 minutes.
+      </div>
 
       <h3>Via the chain's built-in faucet route</h3>
       <pre><code>curl -X POST ${CHAIN_RPC_URL}/api/faucet \\
   -H "Content-Type: application/json" \\
   -d '{"address":"YOUR_ADDRESS"}'</code></pre>
-      <p>This queues a TRANSFER into the mempool — tokens land once the next block is produced, they are not instant.</p>
+      <p>Both <code>0x1234...abcd</code> (42-char) and bare <code>1234...abcd</code> (40-char) formats are accepted. Tokens land once the next block is produced.</p>
 
       <div class="tip">
-        <strong>Amount:</strong> testnet faucet drips <code>10,000,000</code> base units (1000 SAYN) per request, subject to the faucet's own balance.
+        <strong>Amount:</strong> testnet faucet drips <code>10,000,000</code> base units (1000 tSAYN) per request, subject to the faucet's own balance.
       </div>
 
+      <h3>Need bulk tSAYN for building?</h3>
+      <p>Message <a href="https://t.me/SaymanLal" target="_blank" rel="noopener"><strong>@SaymanLal on Telegram</strong></a> with your address, project description, and required amount. Up to <strong>10,000,000 tSAYN</strong> available for verified builders and hackathon teams.</p>
+
       <div class="note">
-        <strong>Two separate faucets exist:</strong> the standalone <code>faucet/</code> service (fronted by the faucet website) and the built-in <code>POST /api/faucet</code> route on the chain itself. Either gets you testnet SAYN — use whichever is more convenient.
+        <strong>Two separate faucets exist:</strong> the standalone <code>faucet/</code> service (fronted by the faucet website) and the built-in <code>POST /api/faucet</code> route on the chain itself. Either gets you testnet tSAYN — use whichever is more convenient.
       </div>
     `
   },
+
 
   'deploy-contract-doc': {
     title: 'Deploy a Contract — Full Walkthrough',
